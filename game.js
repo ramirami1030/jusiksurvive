@@ -27,12 +27,32 @@
     "식사는 소량의 체력과 배고픔을 회복합니다",
     "휴식은 다량의 체력을 회복합니다",
     "주식을 소유하지 않은 상태에서 주식을 살 수 없다면 대출이 가능합니다.",
+    "총 자산이 0 이하라면 긴급 대출이 불가합니다!",
     "대출은 5일 간격으로 이자가 붙습니다",
     "주식의 정보는 그 주식의 250% 가격입니다",
+    "주식이 상장폐지되면 보유 주식은 모두 손실 처리되고 일정 금액이 현금으로 지급되며, 주식은 새로운 이름과 가격으로 재상장됩니다",
+    "주식의 가격은 변동성과 추세, 그리고 랜덤한 편향에 따라 매일 변합니다",
+    "대출의 최대 상한은 최고 주식 가격의 2.5배입니다",
   ];
 
   function getRandomLifeHint() {
     return LIFE_HINTS[Math.floor(Math.random() * LIFE_HINTS.length)];
+  }
+
+  function setLifeHintText(text) {
+    const lifeHintEl = document.querySelector(".life-hint");
+    if (!lifeHintEl) return;
+    if (lifeHintEl.textContent === text) {
+      lifeHintEl.textContent = text;
+      return;
+    }
+    lifeHintEl.classList.add("life-hint-fade-out");
+    window.setTimeout(() => {
+      lifeHintEl.textContent = text;
+      lifeHintEl.classList.remove("life-hint-fade-out");
+      lifeHintEl.classList.add("life-hint-fade-in");
+      window.setTimeout(() => lifeHintEl.classList.remove("life-hint-fade-in"), 240);
+    }, 180);
   }
 
   function basePriceFromVol(volatility) {
@@ -132,13 +152,13 @@
 
   const STATUS_POOL = [
     { id: "vigor", kind: "buff", icon: "💪", name: "활력", days: 3, desc: "매일 체력 +4", healthPerDay: 4 },
-    { id: "lucky", kind: "buff", icon: "🍀", name: "행운", days: 2, desc: "매일 소액 보너스", cashPerDay: 30 },
+    { id: "lucky", kind: "buff", icon: "🍀", name: "행운", days: 3, desc: "매일 소액 보너스", cashPerDay: 30 },
     { id: "focus", kind: "buff", icon: "🎯", name: "집중", days: 3, desc: "정보 구매 30% 할인", infoDiscount: 0.7 },
-    { id: "iron", kind: "buff", icon: "🛡️", name: "강인함", days: 2, desc: "배고픔 증가 -50%", hungerMult: 0.5 },
+    { id: "iron", kind: "buff", icon: "🛡️", name: "강인함", days: 3, desc: "배고픔 증가 -50%", hungerMult: 0.5 },
     { id: "fatigue", kind: "debuff", icon: "😩", name: "피로", days: 3, desc: "매일 체력 -5", healthPerDay: -5 },
-    { id: "insomnia", kind: "debuff", icon: "🌙", name: "불면", days: 2, desc: "매일 배고픔 +8", hungerPerDay: 8 },
-    { id: "panic", kind: "debuff", icon: "📉", name: "공포", days: 2, desc: "주가 변동성 +40%", volMult: 1.4 },
-    { id: "flu_debuff", kind: "debuff", icon: "🤧", name: "몸살", days: 2, desc: "매일 체력 -8", healthPerDay: -8 },
+    { id: "insomnia", kind: "debuff", icon: "🌙", name: "불면", days: 3, desc: "매일 배고픔 +8", hungerPerDay: 8 },
+    { id: "panic", kind: "debuff", icon: "📉", name: "공포", days: 3, desc: "주가 변동성 +40%", volMult: 1.4 },
+    { id: "flu_debuff", kind: "debuff", icon: "🤧", name: "몸살", days: 3, desc: "매일 체력 -8", healthPerDay: -8 },
   ];
 
   const MEAL_TIERS = [
@@ -165,6 +185,7 @@
   let savedQtyInputs = {};
   let delistNotices = [];
   let lastRenderedCash = START_CASH;
+  let loanPopupMode = "loan";
 
   function makeCandle(close) {
     const spread = Math.max(2, Math.round(close * 0.02));
@@ -287,6 +308,7 @@
 
   function canTakeLoan() {
     if (state.gameOver) return false;
+    if (totalAssets() <= 0) return false;
     if (hasAnyHoldings()) return false;
     if (canAffordAnyStock()) return false;
     return getRemainingLoanCapacity() > 0;
@@ -524,18 +546,10 @@
   function tryApplyRandomStatus() {
     if (Math.random() > STATUS_EFFECT_CHANCE) return null;
     const def = STATUS_POOL[Math.floor(Math.random() * STATUS_POOL.length)];
-    const existing = state.statusEffects.find((s) => s.id === def.id);
-    let renewed = false;
-    let daysLeft = def.days;
-    if (existing) {
-      existing.daysLeft = def.days;
-      daysLeft = existing.daysLeft;
-      renewed = true;
-    } else {
-      state.statusEffects.push(cloneStatus(def));
-    }
+    const daysLeft = def.days;
+    state.statusEffects.push(cloneStatus(def));
     if (!state.gameOver) {
-      showStatusPopup(def, daysLeft, renewed);
+      showStatusPopup(def, daysLeft, false);
     }
     return `${def.icon} ${def.kind === "buff" ? "버프" : "디버프"} [${def.name}] (${daysLeft}일) — ${def.desc}`;
   }
@@ -746,9 +760,37 @@
       showToast("대출 조건: 보유 주식 없음 + 어떤 주식도 살 수 없을 때만 가능합니다.");
       return;
     }
+    loanPopupMode = "loan";
     const max = getRemainingLoanCapacity();
     if (max <= 0) return;
-    document.getElementById("loan-max-label").textContent = formatMoney(max);
+    document.getElementById("loan-popup-title").textContent = "긴급 대출";
+    document.getElementById("loan-popup-hint").textContent = "대출 한도 내에서 금액을 입력하세요.";
+    document.querySelector(".loan-popup-limit").innerHTML = `최대 <strong id="loan-max-label">${formatMoney(max)}</strong>원 · 5일마다 이자 6%`;
+    document.querySelector("#loan-popup .event-emoji").textContent = "🏦";
+    document.getElementById("loan-confirm").textContent = "대출 받기";
+    const input = document.getElementById("loan-amount-input");
+    input.max = String(max);
+    input.value = String(max);
+    document.getElementById("loan-popup").classList.remove("hidden");
+  }
+
+  function openRepayPopup() {
+    if (state.loanDebt <= 0) {
+      showToast("상환할 대출이 없습니다.");
+      return;
+    }
+    if (state.cash <= 0) {
+      showToast("현금이 없어 상환할 수 없습니다.");
+      return;
+    }
+    loanPopupMode = "repay";
+    const max = Math.min(state.cash, state.loanDebt);
+    if (max <= 0) return;
+    document.getElementById("loan-popup-title").textContent = "대출 상환";
+    document.getElementById("loan-popup-hint").textContent = "상환할 금액을 입력하세요.";
+    document.querySelector(".loan-popup-limit").innerHTML = `최대 상환 가능: <strong id="loan-max-label">${formatMoney(max)}</strong>원`;
+    document.querySelector("#loan-popup .event-emoji").textContent = "💳";
+    document.getElementById("loan-confirm").textContent = "상환하기";
     const input = document.getElementById("loan-amount-input");
     input.max = String(max);
     input.value = String(max);
@@ -760,21 +802,52 @@
   }
 
   function setLoanInputByPct(pct) {
-    const max = getRemainingLoanCapacity();
+    const max = loanPopupMode === "repay" ? Math.min(state.cash, state.loanDebt) : getRemainingLoanCapacity();
     if (max <= 0) return;
     const amount = Math.max(1, Math.round(max * pct));
     document.getElementById("loan-amount-input").value = String(amount);
   }
 
   function confirmLoan() {
-    if (!canTakeLoan()) {
-      showToast("지금은 대출할 수 없습니다.");
-      hideLoanPopup();
-      return;
-    }
     const parsed = parseLoanAmount();
     if (parsed.error) {
       showToast(parsed.error);
+      return;
+    }
+    const amount = parsed.value;
+    if (loanPopupMode === "repay") {
+      if (state.loanDebt <= 0 || state.cash <= 0) {
+        showToast("상환할 수 없습니다.");
+        hideLoanPopup();
+        return;
+      }
+      const maxRepay = Math.min(state.cash, state.loanDebt);
+      if (amount > maxRepay) {
+        showToast(`최대 ${formatMoney(maxRepay)}원까지 상환할 수 있습니다.`);
+        return;
+      }
+      addCash(-amount, true);
+      state.loanDebt -= amount;
+      hideLoanPopup();
+      showEventPopup(
+        {
+          icon: "💳",
+          title: "대출 상환",
+          msg: "대출 상환이 실행되었습니다.",
+          tone: "good",
+        },
+        `상환액: -${formatMoney(amount)}원\n` +
+          `잔여 부채: ${formatMoney(state.loanDebt)}원`
+      );
+      setNews(`대출 상환 −${formatMoney(amount)}원 (잔여 부채 ${formatMoney(state.loanDebt)}원)`);
+      checkEndConditions();
+      render();
+      return;
+    }
+
+    if (!canTakeLoan()) {
+      showToast("지금은 대출할 수 없습니다.");
+      hideLoanPopup();
       return;
     }
     const max = getRemainingLoanCapacity();
@@ -782,7 +855,6 @@
       showToast(`최대 ${formatMoney(max)}원까지 대출할 수 있습니다.`);
       return;
     }
-    const amount = parsed.value;
     state.loanDebt += amount;
     addCash(amount, true);
     hideLoanPopup();
@@ -957,10 +1029,10 @@
   function renderLifeCosts() {
     document.getElementById("meal-cost-label").textContent = `(-${formatMoney(getMealCost())}원)`;
     document.getElementById("clinic-cost-label").textContent = `(-${formatMoney(getClinicCost())}원)`;
-    document.getElementById("btn-meal").title = "체력 +3~12 · 배고픔 -16~-58";
-    document.getElementById("btn-clinic").title = "체력 +20~73";
+    document.getElementById("btn-meal").title = "체력 +3 ~ 12 · 배고픔 -16 ~ -58";
+    document.getElementById("btn-clinic").title = "체력 +20 ~ 73";
     const lifeHintEl = document.querySelector(".life-hint");
-    if (lifeHintEl) lifeHintEl.textContent = getRandomLifeHint();
+    if (lifeHintEl) setLifeHintText(getRandomLifeHint());
   }
 
   function renderStatusEffects() {
@@ -1299,7 +1371,7 @@
     document.getElementById("btn-meal").addEventListener("click", eatMeal);
     document.getElementById("btn-clinic").addEventListener("click", visitClinic);
     document.getElementById("btn-loan").addEventListener("click", openLoanPopup);
-    document.getElementById("btn-repay").addEventListener("click", repayLoan);
+    document.getElementById("btn-repay").addEventListener("click", openRepayPopup);
     document.getElementById("loan-confirm").addEventListener("click", confirmLoan);
     document.getElementById("loan-cancel").addEventListener("click", hideLoanPopup);
     document.getElementById("loan-popup").addEventListener("click", (e) => {
