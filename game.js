@@ -156,6 +156,7 @@
   let gameStarted = false;
   let activeChartStock = "stable";
   let toastTimer = null;
+  let lifeHintTimer = null;
   let savedQtyInputs = {};
   let delistNotices = [];
   let lastRenderedCash = START_CASH;
@@ -202,7 +203,6 @@
       clinicFlat: 0,
       statusEffects: [],
       loanDebt: 0,
-      lifeHint: getRandomLifeHint(),
     };
   }
 
@@ -684,7 +684,6 @@
     const hungerPenalty = Math.floor(state.hunger / 25) * 4;
     state.health = Math.max(0, state.health - 6 - hungerPenalty);
     state.day += 1;
-    state.lifeHint = getRandomLifeHint();
 
     const interestMsg = applyLoanInterest();
 
@@ -956,7 +955,7 @@
     document.getElementById("btn-meal").title = "체력 +6~22 · 배고픔 -16~-58";
     document.getElementById("btn-clinic").title = "체력 +20~73";
     const lifeHintEl = document.querySelector(".life-hint");
-    if (lifeHintEl) lifeHintEl.textContent = state.lifeHint;
+    if (lifeHintEl) lifeHintEl.textContent = getRandomLifeHint();
   }
 
   function renderStatusEffects() {
@@ -969,7 +968,7 @@
       .map((e) => {
         const def = STATUS_POOL.find((p) => p.id === e.id);
         const desc = def ? def.desc : e.desc;
-        return `<span class="status-chip ${e.kind}" data-status-id="${escapeHtml(e.id)}" title="${escapeHtml(desc)} · ${e.daysLeft}일 남음">${e.icon} ${escapeHtml(e.name)} <strong>${e.daysLeft}일</strong></span>`;
+        return `<span class="status-chip ${e.kind}" data-status-id="${escapeHtml(e.id)}" title="${escapeHtml(desc)} · ${e.daysLeft}일 남음">${e.icon} ${escapeHtml(e.name)} (${escapeHtml(desc)}) <strong>${e.daysLeft}일</strong></span>`;
       })
       .join("");
     list.querySelectorAll("[data-status-id]").forEach((chip) => {
@@ -1268,6 +1267,14 @@
     STOCKS.forEach((s) => {
       state.stocks[s.id].nextBias = (Math.random() - 0.5) * 0.04;
     });
+    if (lifeHintTimer) {
+      clearInterval(lifeHintTimer);
+      lifeHintTimer = null;
+    }
+    lifeHintTimer = setInterval(() => {
+      if (!gameStarted || state.gameOver) return;
+      renderLifeCosts();
+    }, 10000);
     document.getElementById("overlay").classList.add("hidden");
     hideEventPopup();
     hideInfoPopup();
