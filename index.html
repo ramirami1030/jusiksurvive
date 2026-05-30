@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>주식 서바이벌 — 100만원의 꿈 | jusiksuvive.com</title>
+  <link rel="canonical" href="https://jusiksuvive.com/" />
+  <meta name="description" content="1,000원으로 시작해 100만원을 모으는 주식 서바이벌 게임" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>주식 서바이벌</h1>
+      <p class="subtitle">1,000원으로 시작해 <strong>100만원</strong>을 모으세요</p>
+    </header>
+
+    <div id="overlay" class="overlay hidden">
+      <div class="modal">
+        <h2 id="modal-title">게임 오버</h2>
+        <p id="modal-msg"></p>
+        <button type="button" class="btn btn-primary" id="btn-restart">다시 시작</button>
+      </div>
+    </div>
+
+    <div id="event-popup" class="event-popup hidden" role="dialog" aria-labelledby="event-popup-title">
+      <div class="event-popup-card">
+        <div class="event-popup-image" id="event-popup-image" aria-hidden="true"></div>
+        <h3 id="event-popup-title" class="event-popup-title">이벤트</h3>
+        <p id="event-popup-desc" class="event-popup-desc"></p>
+        <button type="button" class="btn btn-primary" id="event-popup-close">확인</button>
+      </div>
+    </div>
+
+    <section class="stats-panel stats-compact">
+      <div class="stats-row-main">
+        <span class="stat-pill"><span class="stat-label">일차</span> <strong id="stat-day">1</strong></span>
+        <span class="stat-pill"><span class="stat-label">현금</span> <strong class="money" id="stat-cash">1,000</strong>원</span>
+        <span class="stat-pill"><span class="stat-label">총자산</span> <strong class="highlight" id="stat-total">1,000</strong>원</span>
+        <span class="stat-pill stat-pill-loan hidden" id="loan-stat-wrap"><span class="stat-label">대출</span> <strong class="loan-debt" id="stat-loan">0</strong>원</span>
+        <span class="stat-pill stat-pill-bar">
+          <span class="stat-label">체력</span>
+          <span class="mini-bar"><span class="health-bar" id="health-bar" style="width:100%"></span></span>
+          <strong id="stat-health">100</strong>
+        </span>
+        <span class="stat-pill stat-pill-bar">
+          <span class="stat-label">배고픔</span>
+          <span class="mini-bar mini-bar-hunger"><span class="hunger-bar" id="hunger-bar" style="width:0%"></span></span>
+          <strong id="stat-hunger">0</strong>%
+        </span>
+        <span class="stat-pill stat-pill-bar stat-pill-goal">
+          <span class="stat-label">목표</span>
+          <span class="mini-bar mini-bar-goal"><span class="goal-bar" id="goal-bar"></span></span>
+          <strong class="small" id="stat-goal-pct">0.1%</strong>
+        </span>
+      </div>
+      <div class="stats-row-status">
+        <span class="stat-label">상태</span>
+        <div class="status-list" id="status-list"><span class="status-none">없음</span></div>
+      </div>
+    </section>
+
+    <section class="life-panel">
+      <h2>생활</h2>
+      <p class="life-hint">밥·검진은 이용할수록 가격이 오르고, 회복량은 매번 [약함/보통/강함]으로 달라집니다. 상태 칩을 누르면 효과를 볼 수 있습니다.</p>
+      <div class="life-actions">
+        <button type="button" class="btn btn-food" id="btn-meal" title="체력·배고픔 회복 (효과 랜덤)">
+          🍚 밥 먹기 <span class="btn-cost" id="meal-cost-label">(-40원)</span>
+        </button>
+        <button type="button" class="btn btn-health" id="btn-clinic" title="체력 +50">
+          🏥 건강검진 <span class="btn-cost" id="clinic-cost-label">(-80원)</span>
+        </button>
+        <button type="button" class="btn btn-loan hidden" id="btn-loan" title="주식·현금이 없을 때만 가능">
+          🏦 긴급 대출
+        </button>
+        <button type="button" class="btn btn-repay hidden" id="btn-repay">
+          💳 대출 상환
+        </button>
+        <button type="button" class="btn btn-primary btn-next-day" id="btn-next-day">
+          📅 다음 날 (주가 변동)
+        </button>
+      </div>
+      <p class="news" id="daily-news">게임을 시작했습니다. 주식을 사고팔며 100만원을 모아보세요!</p>
+      <p class="event-banner hidden" id="event-banner"></p>
+    </section>
+
+    <div id="toast" class="toast hidden" role="alert"></div>
+
+    <div id="info-popup" class="event-popup hidden" role="dialog">
+      <div class="event-popup-card info-card">
+        <h3 class="event-popup-title" id="info-popup-title">종목 정보</h3>
+        <p id="info-popup-desc" class="event-popup-desc"></p>
+        <button type="button" class="btn btn-primary" id="info-popup-close">확인</button>
+      </div>
+    </div>
+
+    <main class="main-grid">
+      <section class="stocks-panel" id="stocks-panel">
+        <h2>주식 거래소</h2>
+        <div class="stocks" id="stocks-container"></div>
+      </section>
+
+      <section class="chart-panel">
+        <h2>주가 차트 <span class="chart-type-hint">(캔들)</span></h2>
+        <div class="chart-tabs" id="chart-tabs"></div>
+        <div class="chart-wrap">
+          <canvas id="price-chart" width="480" height="240"></canvas>
+        </div>
+        <p class="chart-legend" id="chart-change"></p>
+      </section>
+    </main>
+
+    <section class="portfolio-panel">
+      <h2>내 포트폴리오</h2>
+      <table class="portfolio-table">
+        <thead>
+          <tr>
+            <th>종목</th>
+            <th>보유</th>
+            <th>평균 단가</th>
+            <th>현재가</th>
+            <th>평가액</th>
+            <th>손익</th>
+          </tr>
+        </thead>
+        <tbody id="portfolio-body">
+          <tr><td colspan="6" class="empty">보유 주식이 없습니다</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <footer class="site-footer">Made in rami</footer>
+
+  <script src="game.js"></script>
+</body>
+</html>
