@@ -48,6 +48,7 @@
       trend: 0.002,
       color: "#3d9eff",
       aliases: ["안정전자", "드림전자", "한빛전자", "미래반도체"],
+      basePrice: 50,
     },
     {
       id: "bio",
@@ -57,6 +58,7 @@
       trend: 0.004,
       color: "#3dd68c",
       aliases: ["바이오헬스", "메디케어", "생명과학", "뉴바이오"],
+      basePrice: 200,
     },
     {
       id: "energy",
@@ -66,6 +68,7 @@
       trend: 0.003,
       color: "#ff9f43",
       aliases: ["에너지파워", "그린에너지", "솔라텍", "풍력코어"],
+      basePrice: 500,
     },
     {
       id: "ai",
@@ -75,6 +78,7 @@
       trend: 0.005,
       color: "#a78bfa",
       aliases: ["AI네트웍스", "딥러닝", "스마트AI", "퓨처봇"],
+      basePrice: 2000,
     },
     {
       id: "crypto",
@@ -84,8 +88,9 @@
       trend: 0.001,
       color: "#ffc857",
       aliases: ["크립토코인", "디지코인", "넥스트코인", "메타체인"],
+      basePrice: 5000,
     },
-  ].map((s) => ({ ...s, basePrice: basePriceFromVol(s.volatility) }));
+  ].map((s) => ({ ...s, basePrice: s.basePrice ?? basePriceFromVol(s.volatility) }));
 
   const NEWS = [
     "시장이 조용합니다. 오늘은 관망세가 이어집니다.",
