@@ -691,21 +691,71 @@
     return `📈 대출 이자 +${formatMoney(interest)}원 (총 부채 ${formatMoney(state.loanDebt)}원, 5일마다 ${LOAN_INTEREST_RATE * 100}%)`;
   }
 
-  function takeLoan() {
+  function parseLoanAmount() {
+    const input = document.getElementById("loan-amount-input");
+    if (!input) return { error: "대출 금액 입력란을 찾을 수 없습니다." };
+    const raw = String(input.value).trim();
+    if (raw === "") return { error: "대출 금액을 입력해 주세요." };
+    if (/[.,]/.test(raw)) return { error: "소수는 사용할 수 없습니다. 1 이상의 정수만 입력하세요." };
+    const num = Number(raw);
+    if (!Number.isFinite(num) || !Number.isInteger(num)) {
+      return { error: "1 이상의 정수를 입력해 주세요." };
+    }
+    if (num < 1) return { error: "1원 이상 입력해 주세요." };
+    return { value: num };
+  }
+
+  function openLoanPopup() {
     if (!canTakeLoan()) {
       showToast("대출 조건: 보유 주식 없음 + 어떤 주식도 살 수 없을 때만 가능합니다.");
       return;
     }
-    const amount = getRemainingLoanCapacity();
-    if (amount <= 0) return;
+    const max = getRemainingLoanCapacity();
+    if (max <= 0) return;
+    document.getElementById("loan-max-label").textContent = formatMoney(max);
+    const input = document.getElementById("loan-amount-input");
+    input.max = String(max);
+    input.value = String(max);
+    document.getElementById("loan-popup").classList.remove("hidden");
+  }
+
+  function hideLoanPopup() {
+    document.getElementById("loan-popup").classList.add("hidden");
+  }
+
+  function setLoanInputByPct(pct) {
+    const max = getRemainingLoanCapacity();
+    if (max <= 0) return;
+    const amount = Math.max(1, Math.round(max * pct));
+    document.getElementById("loan-amount-input").value = String(amount);
+  }
+
+  function confirmLoan() {
+    if (!canTakeLoan()) {
+      showToast("지금은 대출할 수 없습니다.");
+      hideLoanPopup();
+      return;
+    }
+    const parsed = parseLoanAmount();
+    if (parsed.error) {
+      showToast(parsed.error);
+      return;
+    }
+    const max = getRemainingLoanCapacity();
+    if (parsed.value > max) {
+      showToast(`최대 ${formatMoney(max)}원까지 대출할 수 있습니다.`);
+      return;
+    }
+    const amount = parsed.value;
     state.loanDebt += amount;
     addCash(amount, true);
+    hideLoanPopup();
     const cap = getMaxLoanCap();
     showEventPopup(
       {
         icon: "🏦",
         title: "긴급 대출",
-        msg: `대출 실행`,
+        msg: "대출이 실행되었습니다.",
         tone: "neutral",
       },
       `대출액: +${formatMoney(amount)}원\n` +
@@ -1168,6 +1218,7 @@
     document.getElementById("overlay").classList.add("hidden");
     hideEventPopup();
     hideInfoPopup();
+    hideLoanPopup();
     hideEventBanner();
     setNews("게임을 시작했습니다. 주식을 사고팔며 100만원을 모아보세요!");
     renderChartTabs();
@@ -1179,8 +1230,16 @@
     document.getElementById("btn-next-day").addEventListener("click", passDay);
     document.getElementById("btn-meal").addEventListener("click", eatMeal);
     document.getElementById("btn-clinic").addEventListener("click", visitClinic);
-    document.getElementById("btn-loan").addEventListener("click", takeLoan);
+    document.getElementById("btn-loan").addEventListener("click", openLoanPopup);
     document.getElementById("btn-repay").addEventListener("click", repayLoan);
+    document.getElementById("loan-confirm").addEventListener("click", confirmLoan);
+    document.getElementById("loan-cancel").addEventListener("click", hideLoanPopup);
+    document.getElementById("loan-popup").addEventListener("click", (e) => {
+      if (e.target.id === "loan-popup") hideLoanPopup();
+    });
+    document.querySelectorAll("[data-loan-pct]").forEach((btn) => {
+      btn.addEventListener("click", () => setLoanInputByPct(Number(btn.getAttribute("data-loan-pct"))));
+    });
     document.getElementById("btn-restart").addEventListener("click", restart);
     document.getElementById("event-popup-close").addEventListener("click", hideEventPopup);
     document.getElementById("event-popup").addEventListener("click", (e) => {

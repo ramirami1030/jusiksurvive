@@ -90,6 +90,29 @@
 
     <div id="toast" class="toast hidden" role="alert"></div>
 
+    <div id="loan-popup" class="event-popup hidden" role="dialog" aria-labelledby="loan-popup-title">
+      <div class="event-popup-card loan-card">
+        <div class="event-popup-image" aria-hidden="true"><span class="event-emoji">🏦</span></div>
+        <h3 id="loan-popup-title" class="event-popup-title">긴급 대출</h3>
+        <p class="loan-popup-hint" id="loan-popup-hint">대출 한도 내에서 금액을 입력하세요.</p>
+        <p class="loan-popup-limit">최대 <strong id="loan-max-label">0</strong>원 · 5일마다 이자 6%</p>
+        <div class="loan-amount-row">
+          <label for="loan-amount-input">대출 금액</label>
+          <input type="number" id="loan-amount-input" min="1" step="1" value="1" />
+          <span class="loan-unit">원</span>
+        </div>
+        <div class="loan-quick-btns">
+          <button type="button" class="btn btn-loan-quick" data-loan-pct="0.25">25%</button>
+          <button type="button" class="btn btn-loan-quick" data-loan-pct="0.5">50%</button>
+          <button type="button" class="btn btn-loan-quick" data-loan-pct="1">전액</button>
+        </div>
+        <div class="loan-popup-actions">
+          <button type="button" class="btn btn-primary" id="loan-confirm">대출 받기</button>
+          <button type="button" class="btn btn-loan-cancel" id="loan-cancel">취소</button>
+        </div>
+      </div>
+    </div>
+
     <div id="info-popup" class="event-popup hidden" role="dialog">
       <div class="event-popup-card info-card">
         <h3 class="event-popup-title" id="info-popup-title">종목 정보</h3>
