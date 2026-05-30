@@ -7,7 +7,7 @@
   const MEAL_STEP = 12;
   const CLINIC_BASE = 70;
   const CLINIC_STEP = 22;
-  const MEAL_HEAL_BASE = 15;
+  const MEAL_HEAL_BASE = 8;
   const MEAL_HUNGER_BASE = 40;
   const CLINIC_HEAL_BASE = 50;
   const MAX_HEALTH = 100;
@@ -48,7 +48,7 @@
       trend: 0.002,
       color: "#3d9eff",
       aliases: ["안정전자", "드림전자", "한빛전자", "미래반도체"],
-      basePrice: 50,
+      basePrice: 80,
     },
     {
       id: "bio",
@@ -58,7 +58,7 @@
       trend: 0.004,
       color: "#3dd68c",
       aliases: ["바이오헬스", "메디케어", "생명과학", "뉴바이오"],
-      basePrice: 200,
+      basePrice: 150,
     },
     {
       id: "energy",
@@ -68,7 +68,7 @@
       trend: 0.003,
       color: "#ff9f43",
       aliases: ["에너지파워", "그린에너지", "솔라텍", "풍력코어"],
-      basePrice: 500,
+      basePrice: 400,
     },
     {
       id: "ai",
@@ -78,7 +78,7 @@
       trend: 0.005,
       color: "#a78bfa",
       aliases: ["AI네트웍스", "딥러닝", "스마트AI", "퓨처봇"],
-      basePrice: 2000,
+      basePrice: 1500,
     },
     {
       id: "crypto",
@@ -88,7 +88,7 @@
       trend: 0.001,
       color: "#ffc857",
       aliases: ["크립토코인", "디지코인", "넥스트코인", "메타체인"],
-      basePrice: 5000,
+      basePrice: 4000,
     },
   ].map((s) => ({ ...s, basePrice: s.basePrice ?? basePriceFromVol(s.volatility) }));
 
@@ -957,7 +957,7 @@
   function renderLifeCosts() {
     document.getElementById("meal-cost-label").textContent = `(-${formatMoney(getMealCost())}원)`;
     document.getElementById("clinic-cost-label").textContent = `(-${formatMoney(getClinicCost())}원)`;
-    document.getElementById("btn-meal").title = "체력 +6~22 · 배고픔 -16~-58";
+    document.getElementById("btn-meal").title = "체력 +3~12 · 배고픔 -16~-58";
     document.getElementById("btn-clinic").title = "체력 +20~73";
     const lifeHintEl = document.querySelector(".life-hint");
     if (lifeHintEl) lifeHintEl.textContent = getRandomLifeHint();
@@ -1271,6 +1271,8 @@
     lastRenderedCash = START_CASH;
     STOCKS.forEach((s) => {
       state.stocks[s.id].nextBias = (Math.random() - 0.5) * 0.04;
+      state.stocks[s.id].price = s.basePrice;
+      state.stocks[s.id].candles = [makeCandle(s.basePrice)];
     });
     if (lifeHintTimer) {
       clearInterval(lifeHintTimer);
