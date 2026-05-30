@@ -108,7 +108,7 @@
     { id: "clinic_sale", icon: "💉", type: "price", tone: "good", title: "의료 지원", msg: "정부 의료 지원으로 검진비가 싸집니다.", clinicMult: 0.7 },
     { id: "clinic_hike", icon: "🩺", type: "price", tone: "bad", title: "의료비 인상", msg: "병원비가 인상되었습니다. 검진비가 오릅니다.", clinicFlat: 35 },
     { id: "welfare", icon: "🎁", type: "price", tone: "good", title: "복지 쿠폰", msg: "복지 쿠폰을 받았습니다. 생활비가 전반적으로 내려갑니다.", mealMult: 0.85, clinicMult: 0.85 },
-    { id: "inflation", icon: "🔥", type: "price", tone: "bad", title: "물가 상승", msg: "물가가 치솟았습니다. 밥·검진 모두 비싸집니다.", mealFlat: 15, clinicFlat: 25 },
+    { id: "inflation", icon: "🔥", type: "price", tone: "bad", title: "물가 상승", msg: "물가가 치솟았습니다. 식사·휴식 비용이 모두 비싸집니다.", mealFlat: 15, clinicFlat: 25 },
     { id: "restaurant_boom", icon: "🍜", type: "price", tone: "bad", title: "외식 붐", msg: "외식 수요가 늘어 밥값이 오릅니다.", mealMult: 1.25 },
     { id: "free_clinic", icon: "❤️‍🩹", type: "price", tone: "good", title: "무료 검진", msg: "지역 무료 검진 행사가 열렸습니다!", clinicFlat: -20 },
   ];
@@ -124,13 +124,24 @@
     { id: "flu_debuff", kind: "debuff", icon: "🤧", name: "몸살", days: 2, desc: "매일 체력 -8", healthPerDay: -8 },
   ];
 
-  const EFFECT_TIERS = [
-    { key: "weak", mult: 0.55, label: "약함" },
-    { key: "normal", mult: 1, label: "보통" },
-    { key: "strong", mult: 1.45, label: "강함" },
+  const MEAL_TIERS = [
+    { key: "cup", label: "컵라면", icon: "🍜", mult: 0.4 },
+    { key: "lunchbox", label: "도시락", icon: "🍱", mult: 0.65 },
+    { key: "full", label: "한 상 정식", icon: "🍽️", mult: 0.85 },
+    { key: "samgye", label: "삼계탕", icon: "🍲", mult: 1.1 },
+    { key: "buffet", label: "뷔페", icon: "🥂", mult: 1.45 },
+  ];
+
+  const REST_TIERS = [
+    { key: "walk", label: "산책", icon: "🚶", mult: 0.4 },
+    { key: "hobby", label: "취미 생활", icon: "🎨", mult: 0.65 },
+    { key: "home", label: "집캉스", icon: "🏠", mult: 0.85 },
+    { key: "hotel", label: "호캉스", icon: "🏨", mult: 1.1 },
+    { key: "travel", label: "여행", icon: "✈️", mult: 1.45 },
   ];
 
   let state;
+  let gameStarted = false;
   let activeChartStock = "stable";
   let toastTimer = null;
   let savedQtyInputs = {};
@@ -192,11 +203,17 @@
     return Math.max(25, Math.round(raw));
   }
 
-  function rollEffectTier() {
-    const r = Math.random();
-    if (r < 0.33) return EFFECT_TIERS[0];
-    if (r < 0.66) return EFFECT_TIERS[1];
-    return EFFECT_TIERS[2];
+  function rollFromTiers(tiers) {
+    const idx = Math.floor(Math.random() * tiers.length);
+    return tiers[idx];
+  }
+
+  function rollMealTier() {
+    return rollFromTiers(MEAL_TIERS);
+  }
+
+  function rollRestTier() {
+    return rollFromTiers(REST_TIERS);
   }
 
   function formatMoney(n) {
@@ -317,19 +334,20 @@
     return `${def.desc}\n${daysLeft}일 남음`;
   }
 
-  function showLifePopup(icon, title, detail, isClinic) {
+  function showLifePopup(tier, detail, kind) {
     const card = document.querySelector("#event-popup .event-popup-card");
-    card.classList.remove("status-card", "debuff-card", "life-card", "clinic-card");
+    card.classList.remove("status-card", "debuff-card", "life-card", "rest-card");
     card.classList.add("life-card");
-    if (isClinic) card.classList.add("clinic-card");
-    document.getElementById("event-popup-title").textContent = title;
+    if (kind === "rest") card.classList.add("rest-card");
+    const typeLabel = kind === "meal" ? "식사" : "휴식";
+    document.getElementById("event-popup-title").textContent = `${typeLabel} — ${tier.label}`;
     document.getElementById("event-popup-desc").textContent = detail;
     const imgEl = document.getElementById("event-popup-image");
     imgEl.textContent = "";
     const span = document.createElement("span");
     span.className = "event-emoji";
     span.setAttribute("aria-hidden", "true");
-    span.textContent = icon;
+    span.textContent = tier.icon;
     imgEl.appendChild(span);
     document.getElementById("event-popup").classList.remove("hidden");
   }
@@ -435,8 +453,8 @@
     if (ev.health) parts.push(`체력 ${ev.health > 0 ? "+" : ""}${ev.health}`);
     if (ev.hunger) parts.push(`배고픔 ${ev.hunger > 0 ? "+" : ""}${ev.hunger}`);
     if (ev.cash) parts.push(`현금 ${ev.cash > 0 ? "+" : ""}${ev.cash}원`);
-    if (ev.mealMult || ev.mealFlat) parts.push(`현재 밥값 ${formatMoney(getMealCost())}원`);
-    if (ev.clinicMult || ev.clinicFlat) parts.push(`현재 검진비 ${formatMoney(getClinicCost())}원`);
+    if (ev.mealMult || ev.mealFlat) parts.push(`현재 식사비 ${formatMoney(getMealCost())}원`);
+    if (ev.clinicMult || ev.clinicFlat) parts.push(`현재 휴식비 ${formatMoney(getClinicCost())}원`);
     return parts.join("\n");
   }
 
@@ -633,7 +651,7 @@
   }
 
   function passDay() {
-    if (state.gameOver) return;
+    if (!gameStarted || state.gameOver) return;
 
     STOCKS.forEach((s) => {
       const st = state.stocks[s.id];
@@ -858,13 +876,13 @@
   }
 
   function eatMeal() {
-    if (state.gameOver) return;
+    if (!gameStarted || state.gameOver) return;
     const cost = getMealCost();
     if (state.cash < cost) {
-      showToast(`밥값이 부족합니다. (${formatMoney(cost)}원 필요)`);
+      showToast(`식사 비용이 부족합니다. (${formatMoney(cost)}원 필요)`);
       return;
     }
-    const tier = rollEffectTier();
+    const tier = rollMealTier();
     const healthGain = Math.max(1, Math.round(MEAL_HEAL_BASE * tier.mult));
     const hungerLoss = Math.max(1, Math.round(MEAL_HUNGER_BASE * tier.mult));
     addCash(-cost, true);
@@ -873,33 +891,35 @@
     state.hunger = clampStat(state.hunger - hungerLoss, MAX_HUNGER);
     const next = getMealCost();
     const detail =
+      `메뉴: ${tier.label}\n` +
       `비용: ${formatMoney(cost)}원\n` +
-      `회복 [${tier.label}]: 체력 +${healthGain}, 배고픔 -${hungerLoss}\n` +
-      `다음 밥값: ${formatMoney(next)}원`;
-    setNews(`밥 섭취 [${tier.label}] 체력+${healthGain}, 배고픔-${hungerLoss}`);
-    showLifePopup("🍚", `밥 먹기 — ${tier.label}`, detail, false);
+      `체력 +${healthGain}, 배고픔 -${hungerLoss}\n` +
+      `다음 식사비: ${formatMoney(next)}원`;
+    setNews(`식사 [${tier.label}] 체력+${healthGain}, 배고픔-${hungerLoss}`);
+    showLifePopup(tier, detail, "meal");
     render();
   }
 
   function visitClinic() {
-    if (state.gameOver) return;
+    if (!gameStarted || state.gameOver) return;
     const cost = getClinicCost();
     if (state.cash < cost) {
-      showToast(`검진비가 부족합니다. (${formatMoney(cost)}원 필요)`);
+      showToast(`휴식 비용이 부족합니다. (${formatMoney(cost)}원 필요)`);
       return;
     }
-    const tier = rollEffectTier();
+    const tier = rollRestTier();
     const healthGain = Math.max(1, Math.round(CLINIC_HEAL_BASE * tier.mult));
     addCash(-cost, true);
     state.clinicUses += 1;
     state.health = clampStat(state.health + healthGain, MAX_HEALTH);
     const next = getClinicCost();
     const detail =
+      `활동: ${tier.label}\n` +
       `비용: ${formatMoney(cost)}원\n` +
-      `회복 [${tier.label}]: 체력 +${healthGain}\n` +
-      `다음 검진: ${formatMoney(next)}원`;
-    setNews(`건강검진 [${tier.label}] 체력+${healthGain}`);
-    showLifePopup("🏥", `건강검진 — ${tier.label}`, detail, true);
+      `체력 +${healthGain}\n` +
+      `다음 휴식비: ${formatMoney(next)}원`;
+    setNews(`휴식 [${tier.label}] 체력+${healthGain}`);
+    showLifePopup(tier, detail, "rest");
     render();
   }
 
@@ -1209,12 +1229,33 @@
       disabled || state.loanDebt <= 0 || state.cash <= 0;
   }
 
+  function showStartScreen() {
+    gameStarted = false;
+    document.getElementById("start-screen").classList.remove("hidden");
+    document.querySelector(".app").classList.add("start-hidden");
+    document.getElementById("overlay").classList.add("hidden");
+    hideEventPopup();
+    hideInfoPopup();
+    hideLoanPopup();
+    hideEventBanner();
+  }
+
+  function beginGame() {
+    gameStarted = true;
+    document.getElementById("start-screen").classList.add("hidden");
+    document.querySelector(".app").classList.remove("start-hidden");
+    restart();
+  }
+
   function restart() {
     state = initState();
     activeChartStock = "stable";
     savedQtyInputs = {};
     delistNotices = [];
     lastRenderedCash = START_CASH;
+    STOCKS.forEach((s) => {
+      state.stocks[s.id].nextBias = (Math.random() - 0.5) * 0.04;
+    });
     document.getElementById("overlay").classList.add("hidden");
     hideEventPopup();
     hideInfoPopup();
@@ -1227,6 +1268,7 @@
   }
 
   function bindEvents() {
+    document.getElementById("btn-start-game").addEventListener("click", beginGame);
     document.getElementById("btn-next-day").addEventListener("click", passDay);
     document.getElementById("btn-meal").addEventListener("click", eatMeal);
     document.getElementById("btn-clinic").addEventListener("click", visitClinic);
@@ -1252,12 +1294,6 @@
     window.addEventListener("resize", drawCandlestickChart);
   }
 
-  state = initState();
-  STOCKS.forEach((s) => {
-    state.stocks[s.id].nextBias = (Math.random() - 0.5) * 0.04;
-  });
   bindEvents();
-  renderChartTabs();
-  render();
-  drawCandlestickChart();
+  showStartScreen();
 })();

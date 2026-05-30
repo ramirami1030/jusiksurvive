@@ -33,6 +33,79 @@ body {
   line-height: 1.5;
 }
 
+.start-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 70% 55% at 50% 35%, rgba(61, 158, 255, 0.18), transparent),
+    radial-gradient(ellipse 50% 40% at 80% 90%, rgba(255, 200, 87, 0.1), transparent);
+}
+
+.start-screen.hidden {
+  display: none;
+}
+
+.start-screen-inner {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  max-width: 520px;
+}
+
+.start-title {
+  font-size: clamp(2.5rem, 10vw, 4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #e8edf4 0%, var(--gold) 55%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.start-subtitle {
+  font-size: clamp(1rem, 3.5vw, 1.2rem);
+  color: var(--muted);
+  margin-bottom: 2.5rem;
+  line-height: 1.6;
+}
+
+.start-subtitle strong {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.btn-start-game {
+  font-family: var(--font);
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 0.85rem 2.5rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+  box-shadow: 0 8px 28px rgba(61, 158, 255, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn-start-game:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(61, 158, 255, 0.45);
+}
+
+.app.start-hidden {
+  visibility: hidden;
+  pointer-events: none;
+  height: 0;
+  overflow: hidden;
+}
+
 .app {
   max-width: 1100px;
   margin: 0 auto;
@@ -940,7 +1013,7 @@ body {
   border-color: var(--green);
 }
 
-.event-popup-card.life-card.clinic-card {
+.event-popup-card.life-card.rest-card {
   border-color: #7a9eff;
 }
 

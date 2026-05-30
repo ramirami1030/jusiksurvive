@@ -13,7 +13,15 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app">
+  <div id="start-screen" class="start-screen">
+    <div class="start-screen-inner">
+      <h1 class="start-title">주식 서바이벌</h1>
+      <p class="start-subtitle">1,000원으로 시작해 <strong>100만원</strong>을 모으세요</p>
+      <button type="button" class="btn btn-start-game" id="btn-start-game">게임 시작</button>
+    </div>
+  </div>
+
+  <div class="app start-hidden">
     <header class="header">
       <h1>주식 서바이벌</h1>
       <p class="subtitle">1,000원으로 시작해 <strong>100만원</strong>을 모으세요</p>
@@ -66,13 +74,13 @@
 
     <section class="life-panel">
       <h2>생활</h2>
-      <p class="life-hint">밥·검진은 이용할수록 가격이 오르고, 회복량은 매번 [약함/보통/강함]으로 달라집니다. 상태 칩을 누르면 효과를 볼 수 있습니다.</p>
+      <p class="life-hint">식사·휴식은 이용할수록 가격이 오르고, 효과는 컵라면~뷔페·산책~여행 중 무작위로 결정됩니다.</p>
       <div class="life-actions">
-        <button type="button" class="btn btn-food" id="btn-meal" title="체력·배고픔 회복 (효과 랜덤)">
-          🍚 밥 먹기 <span class="btn-cost" id="meal-cost-label">(-40원)</span>
+        <button type="button" class="btn btn-food" id="btn-meal" title="체력·배고픔 회복 (무작위 등급)">
+          🍽️ 식사 <span class="btn-cost" id="meal-cost-label">(-40원)</span>
         </button>
-        <button type="button" class="btn btn-health" id="btn-clinic" title="체력 +50">
-          🏥 건강검진 <span class="btn-cost" id="clinic-cost-label">(-80원)</span>
+        <button type="button" class="btn btn-health" id="btn-clinic" title="체력 회복 (무작위 등급)">
+          🌿 휴식 <span class="btn-cost" id="clinic-cost-label">(-80원)</span>
         </button>
         <button type="button" class="btn btn-loan hidden" id="btn-loan" title="주식·현금이 없을 때만 가능">
           🏦 긴급 대출
