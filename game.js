@@ -18,20 +18,32 @@
   const DELIST_THRESHOLD = 5;
   const CANDLE_SLOT_WIDTH = 17;
   const MIN_CANDLE_BODY = 4;
-  const INFO_PRICE_RATIO = 0.2;
+  const INFO_PRICE_RATIO = 2.5;
   const LOAN_CAP_MULT = 2.5;
   const LOAN_INTEREST_INTERVAL = 5;
   const LOAN_INTEREST_RATE = 0.06;
 
+  const LIFE_HINTS = [
+    "식사는 소량의 체력과 배고픔을 회복합니다",
+    "휴식은 다량의 체력을 회복합니다",
+    "주식을 소유하지 않은 상태에서 주식을 살 수 없다면 대출이 가능합니다.",
+    "대출은 5일 간격으로 이자가 붙습니다",
+    "주식의 정보는 그 주식의 250% 가격입니다",
+  ];
+
+  function getRandomLifeHint() {
+    return LIFE_HINTS[Math.floor(Math.random() * LIFE_HINTS.length)];
+  }
+
   function basePriceFromVol(volatility) {
-    return Math.round(45 + volatility * 950);
+    return Math.round(45 + volatility * 5000);
   }
 
   const STOCKS = [
     {
       id: "stable",
       name: "안정전자",
-      desc: "변동성 낮음 · 안정적",
+      desc: "안정적",
       volatility: 0.04,
       trend: 0.002,
       color: "#3d9eff",
@@ -40,7 +52,7 @@
     {
       id: "bio",
       name: "바이오헬스",
-      desc: "변동성 중간 · 성장주",
+      desc: "성장주",
       volatility: 0.08,
       trend: 0.004,
       color: "#3dd68c",
@@ -49,7 +61,7 @@
     {
       id: "energy",
       name: "에너지파워",
-      desc: "변동성 중상 · 원자재",
+      desc: "원자재",
       volatility: 0.1,
       trend: 0.003,
       color: "#ff9f43",
@@ -58,7 +70,7 @@
     {
       id: "ai",
       name: "AI네트웍스",
-      desc: "변동성 높음 · 기술주",
+      desc: "기술주",
       volatility: 0.12,
       trend: 0.005,
       color: "#a78bfa",
@@ -67,7 +79,7 @@
     {
       id: "crypto",
       name: "크립토코인",
-      desc: "변동성 최고 · 고위험",
+      desc: "고위험",
       volatility: 0.15,
       trend: 0.001,
       color: "#ffc857",
@@ -190,6 +202,7 @@
       clinicFlat: 0,
       statusEffects: [],
       loanDebt: 0,
+      lifeHint: getRandomLifeHint(),
     };
   }
 
@@ -412,18 +425,15 @@
   }
 
   function generateStockInfo(stockDef, stockState) {
-    const volLabel =
-      stockDef.volatility < 0.06 ? "낮음" : stockDef.volatility < 0.11 ? "중간" : "높음";
     const bias = stockState.nextBias;
-    let forecast = "횡보 가능";
-    if (bias > 0.02) forecast = "내일 상승 쏠림";
-    else if (bias < -0.02) forecast = "내일 하락 쏠림";
+    let forecast = "상승할 가능성이 있습니다.";
+    if (bias > 0.02) forecast = "상승할 가능성이 높습니다.";
+    else if (bias < -0.02) forecast = "하락할 가능성이 있습니다.";
+    else if (bias < 0) forecast = "하락할 가능성이 높습니다.";
 
     return (
-      `변동성: ${volLabel} (${(stockDef.volatility * 100).toFixed(0)}%)\n` +
-      `추세: ${stockDef.trend >= 0.003 ? "성장" : "보합"}\n` +
       `전망: ${forecast}\n` +
-      `현재가 대비 정보 비용: ${formatMoney(getInfoCost(stockDef.id))}원 (20%)`
+      `현재가 대비 정보 비용: ${formatMoney(getInfoCost(stockDef.id))}원 (250%)`
     );
   }
 
@@ -674,6 +684,7 @@
     const hungerPenalty = Math.floor(state.hunger / 25) * 4;
     state.health = Math.max(0, state.health - 6 - hungerPenalty);
     state.day += 1;
+    state.lifeHint = getRandomLifeHint();
 
     const interestMsg = applyLoanInterest();
 
@@ -942,6 +953,10 @@
   function renderLifeCosts() {
     document.getElementById("meal-cost-label").textContent = `(-${formatMoney(getMealCost())}원)`;
     document.getElementById("clinic-cost-label").textContent = `(-${formatMoney(getClinicCost())}원)`;
+    document.getElementById("btn-meal").title = "체력 +6~22 · 배고픔 -16~-58";
+    document.getElementById("btn-clinic").title = "체력 +20~73";
+    const lifeHintEl = document.querySelector(".life-hint");
+    if (lifeHintEl) lifeHintEl.textContent = state.lifeHint;
   }
 
   function renderStatusEffects() {
@@ -1032,6 +1047,7 @@
       const infoActive = st.infoUntilDay >= state.day && st.infoText;
       const infoOk = state.cash >= infoCost && !state.gameOver;
       const qtyVal = escapeHtml(String(savedQtyInputs[def.id] ?? "1").replace(/[^\d]/g, "") || "1");
+      const volatilityLabel = def.volatility < 0.06 ? "낮음" : def.volatility < 0.11 ? "중간" : "높음";
 
       const card = document.createElement("div");
       card.className = "stock-card";
@@ -1039,7 +1055,10 @@
         <div class="stock-header">
           <div>
             <div class="stock-name">${escapeHtml(st.displayName)}${st.generation > 0 ? ` <span class="gen-badge">G${st.generation}</span>` : ""}</div>
-            <div class="stock-desc">${escapeHtml(def.desc)} · 초기가 ${formatMoney(def.basePrice)}원</div>
+            <div class="stock-subinfo">
+              <span class="stock-volatility">변동성 ${volatilityLabel} (${(def.volatility * 100).toFixed(0)}%)</span>
+              <span class="stock-desc">${escapeHtml(def.desc)} · 초기가 ${formatMoney(def.basePrice)}원</span>
+            </div>
           </div>
           <div>
             <div class="stock-price">${formatMoney(st.price)}원</div>
