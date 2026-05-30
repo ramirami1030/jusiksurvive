@@ -203,6 +203,15 @@
     return Math.floor(n).toLocaleString("ko-KR");
   }
 
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function grossAssets() {
     let total = state.cash;
     STOCKS.forEach((s) => {
@@ -288,8 +297,13 @@
     card.classList.remove("status-card", "debuff-card", "life-card", "clinic-card");
     document.getElementById("event-popup-title").textContent = ev.title || "돌발 이벤트";
     document.getElementById("event-popup-desc").textContent = detailText || ev.msg;
-    document.getElementById("event-popup-image").innerHTML =
-      `<span class="event-emoji" aria-hidden="true">${ev.icon || "📢"}</span>`;
+    const imgEl = document.getElementById("event-popup-image");
+    imgEl.textContent = "";
+    const span = document.createElement("span");
+    span.className = "event-emoji";
+    span.setAttribute("aria-hidden", "true");
+    span.textContent = ev.icon || "📢";
+    imgEl.appendChild(span);
     document.getElementById("event-popup").classList.remove("hidden");
   }
 
@@ -310,8 +324,13 @@
     if (isClinic) card.classList.add("clinic-card");
     document.getElementById("event-popup-title").textContent = title;
     document.getElementById("event-popup-desc").textContent = detail;
-    document.getElementById("event-popup-image").innerHTML =
-      `<span class="event-emoji" aria-hidden="true">${icon}</span>`;
+    const imgEl = document.getElementById("event-popup-image");
+    imgEl.textContent = "";
+    const span = document.createElement("span");
+    span.className = "event-emoji";
+    span.setAttribute("aria-hidden", "true");
+    span.textContent = icon;
+    imgEl.appendChild(span);
     document.getElementById("event-popup").classList.remove("hidden");
   }
 
@@ -323,8 +342,13 @@
     document.getElementById("event-popup-title").textContent =
       `${def.icon} ${kindLabel}: ${def.name}` + (renewed ? " (갱신)" : "");
     document.getElementById("event-popup-desc").textContent = buildStatusEffectDetail(def, daysLeft);
-    document.getElementById("event-popup-image").innerHTML =
-      `<span class="event-emoji" aria-hidden="true">${def.icon}</span>`;
+    const imgEl = document.getElementById("event-popup-image");
+    imgEl.textContent = "";
+    const span = document.createElement("span");
+    span.className = "event-emoji";
+    span.setAttribute("aria-hidden", "true");
+    span.textContent = def.icon;
+    imgEl.appendChild(span);
     document.getElementById("event-popup").classList.remove("hidden");
   }
 
@@ -867,7 +891,7 @@
       .map((e) => {
         const def = STATUS_POOL.find((p) => p.id === e.id);
         const desc = def ? def.desc : e.desc;
-        return `<span class="status-chip ${e.kind}" data-status-id="${e.id}" title="${desc} · ${e.daysLeft}일 남음">${e.icon} ${e.name} <strong>${e.daysLeft}일</strong></span>`;
+        return `<span class="status-chip ${e.kind}" data-status-id="${escapeHtml(e.id)}" title="${escapeHtml(desc)} · ${e.daysLeft}일 남음">${e.icon} ${escapeHtml(e.name)} <strong>${e.daysLeft}일</strong></span>`;
       })
       .join("");
     list.querySelectorAll("[data-status-id]").forEach((chip) => {
@@ -897,7 +921,7 @@
 
   function renderStats() {
     const total = netAssets();
-    document.getElementById("stat-day").textContent = state.day;
+    document.getElementById("stat-day").textContent = `${state.day} 일차`;
     document.getElementById("stat-cash").textContent = formatMoney(state.cash);
     document.getElementById("stat-total").textContent = formatMoney(total);
     renderLoanUI();
@@ -944,23 +968,24 @@
       const infoCost = getInfoCost(def.id);
       const infoActive = st.infoUntilDay >= state.day && st.infoText;
       const infoOk = state.cash >= infoCost && !state.gameOver;
+      const qtyVal = escapeHtml(String(savedQtyInputs[def.id] ?? "1").replace(/[^\d]/g, "") || "1");
 
       const card = document.createElement("div");
       card.className = "stock-card";
       card.innerHTML = `
         <div class="stock-header">
           <div>
-            <div class="stock-name">${st.displayName}${st.generation > 0 ? ` <span class="gen-badge">G${st.generation}</span>` : ""}</div>
-            <div class="stock-desc">${def.desc} · 초기가 ${formatMoney(def.basePrice)}원</div>
+            <div class="stock-name">${escapeHtml(st.displayName)}${st.generation > 0 ? ` <span class="gen-badge">G${st.generation}</span>` : ""}</div>
+            <div class="stock-desc">${escapeHtml(def.desc)} · 초기가 ${formatMoney(def.basePrice)}원</div>
           </div>
           <div>
             <div class="stock-price">${formatMoney(st.price)}원</div>
             <div class="stock-change ${changeClass}">${changeSign}${delta} (${changeSign}${pct}%)</div>
           </div>
         </div>
-        ${infoActive ? `<div class="stock-info-badge"><strong>📊 정보</strong> ${st.infoText.replace(/\n/g, " · ")}</div>` : ""}
+        ${infoActive ? `<div class="stock-info-badge"><strong>📊 정보</strong> ${escapeHtml(st.infoText.replace(/\n/g, " · "))}</div>` : ""}
         <div class="stock-actions">
-          <input type="number" min="1" step="1" value="${savedQtyInputs[def.id] ?? "1"}" id="qty-${def.id}" aria-label="수량" />
+          <input type="number" min="1" step="1" value="${qtyVal}" id="qty-${def.id}" aria-label="수량" />
           <div class="trade-block ${buyOk ? "" : "trade-disabled"}" data-disabled-reason="매수 불가">
             <button type="button" class="btn btn-buy" data-buy="${def.id}">매수</button>
           </div>
@@ -968,7 +993,7 @@
             <button type="button" class="btn btn-sell" data-sell="${def.id}">매도</button>
           </div>
           <div class="trade-block ${infoOk ? "" : "trade-disabled"}" data-disabled-reason="정보 불가">
-            <button type="button" class="btn btn-info" data-info="${def.id}" title="현재가의 20%">정보 ${formatMoney(infoCost)}원</button>
+            <button type="button" class="btn btn-info" data-info="${def.id}" title="이 주식의 미래를 알려드립니다">정보 ${formatMoney(infoCost)}원</button>
           </div>
           <span style="font-size:0.8rem;color:var(--muted)">보유 ${st.holdings}주</span>
         </div>
@@ -997,7 +1022,7 @@
       const plClass = pl >= 0 ? "profit" : "loss";
       const plSign = pl >= 0 ? "+" : "";
       return `<tr>
-        <td>${st.displayName}</td>
+        <td>${escapeHtml(st.displayName)}</td>
         <td>${st.holdings}주</td>
         <td>${formatMoney(st.avgCost)}원</td>
         <td>${formatMoney(st.price)}원</td>
@@ -1116,8 +1141,9 @@
     const changePct = first.close ? ((change / first.close) * 100).toFixed(1) : "0.0";
     const sign = change >= 0 ? "+" : "";
     const cls = change > 0 ? "up" : change < 0 ? "down" : "flat";
-    document.getElementById("chart-change").innerHTML =
-      `<span class="stock-change ${cls}">${st.displayName} · 종 ${formatMoney(last.close)} (${sign}${changePct}%)</span>`;
+    document.getElementById("chart-change").textContent =
+      `${st.displayName} · 종 ${formatMoney(last.close)} (${sign}${changePct}%)`;
+    document.getElementById("chart-change").className = `chart-legend stock-change ${cls}`;
   }
 
   function render() {
