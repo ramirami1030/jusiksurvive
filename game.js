@@ -44,7 +44,7 @@
       id: "stable",
       name: "안정전자",
       desc: "안정적",
-      volatility: 0.04,
+      volatility: 0.03,
       trend: 0.002,
       color: "#3d9eff",
       aliases: ["안정전자", "드림전자", "한빛전자", "미래반도체"],
@@ -62,7 +62,7 @@
       id: "energy",
       name: "에너지파워",
       desc: "원자재",
-      volatility: 0.1,
+      volatility: 0.15,
       trend: 0.003,
       color: "#ff9f43",
       aliases: ["에너지파워", "그린에너지", "솔라텍", "풍력코어"],
@@ -71,7 +71,7 @@
       id: "ai",
       name: "AI네트웍스",
       desc: "기술주",
-      volatility: 0.12,
+      volatility: 0.3,
       trend: 0.005,
       color: "#a78bfa",
       aliases: ["AI네트웍스", "딥러닝", "스마트AI", "퓨처봇"],
@@ -80,7 +80,7 @@
       id: "crypto",
       name: "크립토코인",
       desc: "고위험",
-      volatility: 0.15,
+      volatility: 0.5,
       trend: 0.001,
       color: "#ffc857",
       aliases: ["크립토코인", "디지코인", "넥스트코인", "메타체인"],
@@ -126,14 +126,14 @@
   ];
 
   const STATUS_POOL = [
-    { id: "vigor", kind: "buff", icon: "💪", name: "활력", days: 7, desc: "매일 체력 +4", healthPerDay: 4 },
-    { id: "lucky", kind: "buff", icon: "🍀", name: "행운", days: 7, desc: "매일 소액 보너스", cashPerDay: 30 },
-    { id: "focus", kind: "buff", icon: "🎯", name: "집중", days: 7, desc: "정보 구매 30% 할인", infoDiscount: 0.7 },
-    { id: "iron", kind: "buff", icon: "🛡️", name: "강인함", days: 7, desc: "배고픔 증가 -50%", hungerMult: 0.5 },
-    { id: "fatigue", kind: "debuff", icon: "😩", name: "피로", days: 7, desc: "매일 체력 -5", healthPerDay: -5 },
-    { id: "insomnia", kind: "debuff", icon: "🌙", name: "불면", days: 7, desc: "매일 배고픔 +8", hungerPerDay: 8 },
-    { id: "panic", kind: "debuff", icon: "📉", name: "공포", days: 7, desc: "주가 변동성 +40%", volMult: 1.4 },
-    { id: "flu_debuff", kind: "debuff", icon: "🤧", name: "몸살", days: 7, desc: "매일 체력 -8", healthPerDay: -8 },
+    { id: "vigor", kind: "buff", icon: "💪", name: "활력", days: 3, desc: "매일 체력 +4", healthPerDay: 4 },
+    { id: "lucky", kind: "buff", icon: "🍀", name: "행운", days: 2, desc: "매일 소액 보너스", cashPerDay: 30 },
+    { id: "focus", kind: "buff", icon: "🎯", name: "집중", days: 3, desc: "정보 구매 30% 할인", infoDiscount: 0.7 },
+    { id: "iron", kind: "buff", icon: "🛡️", name: "강인함", days: 2, desc: "배고픔 증가 -50%", hungerMult: 0.5 },
+    { id: "fatigue", kind: "debuff", icon: "😩", name: "피로", days: 3, desc: "매일 체력 -5", healthPerDay: -5 },
+    { id: "insomnia", kind: "debuff", icon: "🌙", name: "불면", days: 2, desc: "매일 배고픔 +8", hungerPerDay: 8 },
+    { id: "panic", kind: "debuff", icon: "📉", name: "공포", days: 2, desc: "주가 변동성 +40%", volMult: 1.4 },
+    { id: "flu_debuff", kind: "debuff", icon: "🤧", name: "몸살", days: 2, desc: "매일 체력 -8", healthPerDay: -8 },
   ];
 
   const MEAL_TIERS = [
