@@ -1017,6 +1017,28 @@ body {
   border-color: #7a9eff;
 }
 
+.life-popup-quote {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.55;
+  margin-bottom: 0.85rem;
+  font-style: italic;
+}
+
+.life-popup-effects {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--green);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.event-popup-card.rest-card .life-popup-effects {
+  color: #8eb8ff;
+}
+
 .gen-badge {
   font-size: 0.65rem;
   font-weight: 600;

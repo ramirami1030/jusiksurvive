@@ -125,19 +125,19 @@
   ];
 
   const MEAL_TIERS = [
-    { key: "cup", label: "컵라면", icon: "🍜", mult: 0.4 },
-    { key: "lunchbox", label: "도시락", icon: "🍱", mult: 0.65 },
-    { key: "full", label: "한 상 정식", icon: "🍽️", mult: 0.85 },
-    { key: "samgye", label: "삼계탕", icon: "🍲", mult: 1.1 },
-    { key: "buffet", label: "뷔페", icon: "🥂", mult: 1.45 },
+    { key: "cup", label: "컵라면", icon: "🍜", mult: 0.4, quote: "일단 살고 보자." },
+    { key: "lunchbox", label: "도시락", icon: "🍱", mult: 0.65, quote: "가성비 좋은 한 끼." },
+    { key: "full", label: "한 상 정식", icon: "🍽️", mult: 0.85, quote: "이 정도는 먹어야지." },
+    { key: "samgye", label: "삼계탕", icon: "🍲", mult: 1.1, quote: "체력이 차오르는 기분." },
+    { key: "buffet", label: "뷔페", icon: "🥂", mult: 1.45, quote: "본전 찾을 때까지 먹는다." },
   ];
 
   const REST_TIERS = [
-    { key: "walk", label: "산책", icon: "🚶", mult: 0.4 },
-    { key: "hobby", label: "취미 생활", icon: "🎨", mult: 0.65 },
-    { key: "home", label: "집캉스", icon: "🏠", mult: 0.85 },
-    { key: "hotel", label: "호캉스", icon: "🏨", mult: 1.1 },
-    { key: "travel", label: "여행", icon: "✈️", mult: 1.45 },
+    { key: "walk", label: "산책", icon: "🚶", mult: 0.4, quote: "잠깐 현실 도피." },
+    { key: "hobby", label: "취미 생활", icon: "🎨", mult: 0.65, quote: "스트레스는 취미로 푼다." },
+    { key: "home", label: "집캉스", icon: "🏠", mult: 0.85, quote: "침대와 한 몸이 된다." },
+    { key: "hotel", label: "호캉스", icon: "🏨", mult: 1.1, quote: "돈으로 사는 여유." },
+    { key: "travel", label: "여행", icon: "✈️", mult: 1.45, quote: "진짜 쉬러 떠난다." },
   ];
 
   let state;
@@ -325,23 +325,26 @@
   }
 
   function hideEventPopup() {
+    document.getElementById("event-popup-desc").textContent = "";
     document.getElementById("event-popup").classList.add("hidden");
     const card = document.querySelector("#event-popup .event-popup-card");
-    if (card) card.classList.remove("status-card", "debuff-card", "life-card", "clinic-card");
+    if (card) card.classList.remove("status-card", "debuff-card", "life-card", "rest-card", "clinic-card");
   }
 
   function buildStatusEffectDetail(def, daysLeft) {
     return `${def.desc}\n${daysLeft}일 남음`;
   }
 
-  function showLifePopup(tier, detail, kind) {
+  function showLifePopup(tier, effectsLine, kind) {
     const card = document.querySelector("#event-popup .event-popup-card");
     card.classList.remove("status-card", "debuff-card", "life-card", "rest-card");
     card.classList.add("life-card");
     if (kind === "rest") card.classList.add("rest-card");
     const typeLabel = kind === "meal" ? "식사" : "휴식";
     document.getElementById("event-popup-title").textContent = `${typeLabel} — ${tier.label}`;
-    document.getElementById("event-popup-desc").textContent = detail;
+    document.getElementById("event-popup-desc").innerHTML =
+      `<p class="life-popup-quote">"${escapeHtml(tier.quote)}"</p>` +
+      `<p class="life-popup-effects">${escapeHtml(effectsLine)}</p>`;
     const imgEl = document.getElementById("event-popup-image");
     imgEl.textContent = "";
     const span = document.createElement("span");
@@ -889,14 +892,9 @@
     state.mealUses += 1;
     state.health = clampStat(state.health + healthGain, MAX_HEALTH);
     state.hunger = clampStat(state.hunger - hungerLoss, MAX_HUNGER);
-    const next = getMealCost();
-    const detail =
-      `메뉴: ${tier.label}\n` +
-      `비용: ${formatMoney(cost)}원\n` +
-      `체력 +${healthGain}, 배고픔 -${hungerLoss}\n` +
-      `다음 식사비: ${formatMoney(next)}원`;
+    const effectsLine = `체력 +${healthGain}  ·  배고픔 -${hungerLoss}`;
     setNews(`식사 [${tier.label}] 체력+${healthGain}, 배고픔-${hungerLoss}`);
-    showLifePopup(tier, detail, "meal");
+    showLifePopup(tier, effectsLine, "meal");
     render();
   }
 
@@ -912,14 +910,9 @@
     addCash(-cost, true);
     state.clinicUses += 1;
     state.health = clampStat(state.health + healthGain, MAX_HEALTH);
-    const next = getClinicCost();
-    const detail =
-      `활동: ${tier.label}\n` +
-      `비용: ${formatMoney(cost)}원\n` +
-      `체력 +${healthGain}\n` +
-      `다음 휴식비: ${formatMoney(next)}원`;
+    const effectsLine = `체력 +${healthGain}`;
     setNews(`휴식 [${tier.label}] 체력+${healthGain}`);
-    showLifePopup(tier, detail, "rest");
+    showLifePopup(tier, effectsLine, "rest");
     render();
   }
 
